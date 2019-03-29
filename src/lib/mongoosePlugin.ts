@@ -60,7 +60,7 @@ const mongooseChangeLogger = (params: IParams) => {
 
     return (schema: Schema & any) => {
         schema.add({ '__changeId': { type: Schema.Types.ObjectId, select: false }});
-        schema.add({ '__actor': { type: Schema.Types.String, select: false }});
+        schema.add({ '__actor': { type: Schema.Types.Mixed, select: false }});
 
         // Query methods
         mongooseInstance.Query.prototype.by = function (actor: string) {
