@@ -6,6 +6,9 @@
     // waiting on https://github.com/palantir/tslint/pull/3708
     "no-implicit-dependencies": [true, "dev"],
     "no-submodule-imports": false,
-    "no-console": false
+    "no-console": false,
+    "only-arrow-functions": false,
+    "no-angle-bracket-type-assertion": false,
+    "no-var-requires": false
   }
 }

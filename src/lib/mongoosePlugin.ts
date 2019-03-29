@@ -1,8 +1,8 @@
 import { MongoClient } from 'mongodb';
+import { Document, Query, Schema, Types } from 'mongoose';
 import { Observable, Subscriber } from 'rxjs';
 import { flatMap } from 'rxjs/operators';
 import { IChangeEvent, IParams } from '../types/plugin';
-import { Schema, Query, Document, Types } from 'mongoose';
 
 const mongooseChangeLogger = (params: IParams) => {
     const {
@@ -12,13 +12,13 @@ const mongooseChangeLogger = (params: IParams) => {
         modelName,
         mongooseInstance,
     } = params;
-    if (!connectionString) throw new Error('Connection string is required');
-    if (!modelName) throw new Error('Model name is required');
-    if (!mongooseInstance) throw new Error('Mongoose instance is required');
+    if (!connectionString) { throw new Error('Connection string is required'); }
+    if (!modelName) { throw new Error('Model name is required'); }
+    if (!mongooseInstance) { throw new Error('Mongoose instance is required'); }
 
     const mongoClient = new MongoClient(connectionString, { useNewUrlParser: true });
     let dbWriteStream: Subscriber<IChangeEvent>;
-    const observable = new Observable<IChangeEvent>((observer) => {
+    const observable = new Observable<IChangeEvent>((observer: Subscriber<IChangeEvent>) => {
         dbWriteStream = observer;
     });
 
@@ -49,11 +49,11 @@ const mongooseChangeLogger = (params: IParams) => {
         const when = new Date();
         return {
             _id: id,
+            action,
+            actor,
             modelName,
             stack,
-            action,
             when,
-            actor,
             ...extraData,
         };
     };
@@ -87,8 +87,8 @@ const mongooseChangeLogger = (params: IParams) => {
                     updateQuery.__actor,
                     updateQuery.__stack,
                     {
-                        update: JSON.stringify(update),
                         conditions: JSON.stringify(updateQuery.getQuery()),
+                        update: JSON.stringify(update),
                     },
                 ),
             );
