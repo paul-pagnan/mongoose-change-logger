@@ -1,12 +1,13 @@
-import { connect, connection, Document, Query, Schema, Types } from 'mongoose';
+import { MongoClient } from 'mongodb';
+import { Document, Query, Schema, Types } from 'mongoose';
 import { Observable, Subscriber } from 'rxjs';
 import { flatMap } from 'rxjs/operators';
 import { IChangeEvent, IParams } from '../types/plugin';
 
-
+let client: MongoClient;
 const init = async (connectionString: string) => {
     if (!connectionString) { throw new Error('Connection string is required'); }
-    await connect(connectionString, { useNewUrlParser: true });
+    client = await new MongoClient(connectionString, { useNewUrlParser: true });
 };
 
 const mongooseChangeLogger = (params: IParams) => {
@@ -26,10 +27,10 @@ const mongooseChangeLogger = (params: IParams) => {
 
     observable.pipe(
         flatMap(async (changeEvent: IChangeEvent) => {
-                if (!connection.readyState) {
+                if (!client || !client.isConnected()) {
                     throw new Error('Mongoose change logger is not connected to the event log db. Did you forget to call init()?');
                 }
-                return connection.collection(collection).insertOne(changeEvent);
+                return client.db().collection(collection).insertOne(changeEvent);
             }, concurrentSaves),
     ).subscribe(null, (err: Error) => console.error(err));
 
