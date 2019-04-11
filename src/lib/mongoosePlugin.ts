@@ -1,22 +1,24 @@
-import { MongoClient } from 'mongodb';
-import { Document, Query, Schema, Types } from 'mongoose';
+import { connect, connection, Document, Query, Schema, Types } from 'mongoose';
 import { Observable, Subscriber } from 'rxjs';
 import { flatMap } from 'rxjs/operators';
 import { IChangeEvent, IParams } from '../types/plugin';
 
+
+const init = async (connectionString: string) => {
+    if (!connectionString) { throw new Error('Connection string is required'); }
+    await connect(connectionString, { useNewUrlParser: true });
+};
+
 const mongooseChangeLogger = (params: IParams) => {
     const {
-        connectionString,
         collection = 'changes',
         concurrentSaves = 10,
         modelName,
         mongooseInstance,
     } = params;
-    if (!connectionString) { throw new Error('Connection string is required'); }
     if (!modelName) { throw new Error('Model name is required'); }
     if (!mongooseInstance) { throw new Error('Mongoose instance is required'); }
 
-    const mongoClient = new MongoClient(connectionString, { useNewUrlParser: true });
     let dbWriteStream: Subscriber<IChangeEvent>;
     const observable = new Observable<IChangeEvent>((observer: Subscriber<IChangeEvent>) => {
         dbWriteStream = observer;
@@ -24,12 +26,12 @@ const mongooseChangeLogger = (params: IParams) => {
 
     observable.pipe(
         flatMap(async (changeEvent: IChangeEvent) => {
-                if (!mongoClient.isConnected()) {
-                    await mongoClient.connect();
+                if (!connection.readyState) {
+                    throw new Error('Mongoose change logger is not connected to the event log db. Did you forget to call init()?');
                 }
-                return mongoClient.db().collection(collection).insertOne(changeEvent);
+                return connection.collection(collection).insertOne(changeEvent);
             }, concurrentSaves),
-    ).subscribe(null, (err) => console.error(err));
+    ).subscribe(null, (err: Error) => console.error(err));
 
     const getStack = () => {
         const stack = (new Error().stack || '').split('\n');
@@ -173,3 +175,4 @@ const mongooseChangeLogger = (params: IParams) => {
 };
 
 export default mongooseChangeLogger;
+export { init };

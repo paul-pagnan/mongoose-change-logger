@@ -9,7 +9,6 @@ interface IChangeEvent {
 }
 
 interface IParams {
-    connectionString: string;
     modelName: string;
     mongooseInstance: Mongoose;
     collection?: string;
