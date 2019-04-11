@@ -1,6 +1,6 @@
 {
   "name": "mongoose-change-logger",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A mongoose plugin to log when a query is run and also who performed that query",
   "main": "build/main/index.js",
   "typings": "build/main/index.d.ts",
