@@ -7,7 +7,16 @@ import { IChangeEvent, IParams } from '../types/plugin';
 let client: MongoClient;
 const init = async (connectionString: string) => {
     if (!connectionString) { throw new Error('Connection string is required'); }
-    client = await new MongoClient(connectionString, { useNewUrlParser: true });
+    client = await new MongoClient(connectionString,
+        {
+            reconnectTries: 2,
+            useNewUrlParser: true,
+        });
+    try {
+        client = await client.connect();
+    } catch (error) {
+        console.error(`Mongoose change logger is not connected. ${error}, ${JSON.stringify(client)}`);
+    }
 };
 
 const mongooseChangeLogger = (params: IParams) => {
