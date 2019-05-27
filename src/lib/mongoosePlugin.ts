@@ -1,4 +1,4 @@
-import { MongoClient } from 'mongodb';
+import { MongoClient, MongoError } from 'mongodb';
 import { Document, Query, Schema, Types } from 'mongoose';
 import { Observable, Subscriber } from 'rxjs';
 import { flatMap } from 'rxjs/operators';
@@ -7,7 +7,16 @@ import { IChangeEvent, IParams } from '../types/plugin';
 let client: MongoClient;
 const init = async (connectionString: string) => {
     if (!connectionString) { throw new Error('Connection string is required'); }
-    client = await new MongoClient(connectionString, { useNewUrlParser: true });
+    client = await new MongoClient(connectionString,
+        {
+            reconnectTries: 2,
+            useNewUrlParser: true,
+        });
+    client.connect((error: MongoError, mongoClient: MongoClient) => {
+        if (error) {
+            throw new Error(`Mongoose change logger is not connected. ${error}, ${mongoClient}`);
+        }
+    });
 };
 
 const mongooseChangeLogger = (params: IParams) => {
