@@ -1,4 +1,4 @@
-import { MongoClient, MongoError } from 'mongodb';
+import { MongoClient } from 'mongodb';
 import { Document, Query, Schema, Types } from 'mongoose';
 import { Observable, Subscriber } from 'rxjs';
 import { flatMap } from 'rxjs/operators';
@@ -12,11 +12,11 @@ const init = async (connectionString: string) => {
             reconnectTries: 2,
             useNewUrlParser: true,
         });
-    client.connect((error: MongoError, mongoClient: MongoClient) => {
-        if (error) {
-            throw new Error(`Mongoose change logger is not connected. ${error}, ${mongoClient}`);
-        }
-    });
+    try {
+        client = await client.connect();
+    } catch (error) {
+        console.error(`Mongoose change logger is not connected. ${error}, ${JSON.stringify(client)}`);
+    }
 };
 
 const mongooseChangeLogger = (params: IParams) => {
