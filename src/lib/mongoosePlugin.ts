@@ -85,6 +85,8 @@ const mongooseChangeLogger = (params: IParams) => {
         const logForQuery = (updateQuery: Query<any>, action: string, set: boolean) => {
             const update = updateQuery.getUpdate();
 
+            if (updateQuery.__logged) return;
+
             if (!updateQuery.__changeId || !updateQuery.__actor) {
                 console.warn(`Actor not set for query: ${JSON.stringify(update)}`);
             } else if (set) {
@@ -92,6 +94,7 @@ const mongooseChangeLogger = (params: IParams) => {
                 update.$set.__actor = updateQuery.__actor;
                 (<any> updateQuery)._update = update;
             }
+            updateQuery.__logged = true;
             dbWriteStream.next(
                 getChangedEvent(
                     updateQuery.__changeId,
@@ -151,10 +154,13 @@ const mongooseChangeLogger = (params: IParams) => {
         };
 
         const logForDoc = (doc: any, action: string) => {
+            // prevent logging twice
+            if (doc.__logged) return;
             if (!doc.__changeId || !doc.__actor) {
                 console.warn(`Actor not set for ${action}: ${JSON.stringify(doc)}`);
             }
             const stack = doc.__stack;
+            doc.__logged = true;
             dbWriteStream.next(getChangedEvent(doc.__changeId, action, doc.__actor, stack));
         };
 

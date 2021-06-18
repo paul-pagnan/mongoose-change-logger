@@ -9,11 +9,13 @@ declare module "mongoose" {
         __changeId?: Types.ObjectId;
         __actor?: any;
         __stack?: string;
+        __logged?: boolean;
     }
     export interface DocumentQuery<T, DocType extends Document, QueryHelpers = {}> extends mquery {
         __changeId?: Types.ObjectId;
         __actor?: any;
         __stack?: string;
+        __logged?: boolean;
         by(actor: any): this;
     }
 }
