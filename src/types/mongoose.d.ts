@@ -11,7 +11,7 @@ declare module "mongoose" {
         __stack?: string;
         __logged?: boolean;
     }
-    export interface DocumentQuery<T, DocType extends Document, QueryHelpers = {}> extends mquery {
+    export interface Query<ResultType, DocType, THelpers> {
         __changeId?: Types.ObjectId;
         __actor?: any;
         __stack?: string;
