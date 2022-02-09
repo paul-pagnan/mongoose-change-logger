@@ -1,5 +1,6 @@
 import { Types, Mongoose } from 'mongoose';
-interface IChangeEvent {
+
+export interface IChangeEvent {
     id: Types.ObjectId;
     action: string;
     modelName: string;
@@ -8,9 +9,11 @@ interface IChangeEvent {
     actor: string;
 }
 
-interface IParams {
+export interface IParams {
     modelName: string;
     mongooseInstance: Mongoose;
     collection?: string;
     concurrentSaves?: number; // default to 10
 }
+
+export * from './types/mongoose';
