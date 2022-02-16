@@ -1,5 +1,5 @@
 import { MongoClient } from 'mongodb';
-import { Document, Query, Schema, Types } from 'mongoose';
+import { Document, Query, Schema, Types, UpdateQuery } from 'mongoose';
 import { Observable, Subscriber } from 'rxjs';
 import { flatMap } from 'rxjs/operators';
 import { IChangeEvent, IParams } from '../types/plugin';
@@ -82,16 +82,28 @@ const mongooseChangeLogger = (params: IParams) => {
             return this;
         };
 
-        const logForQuery = (updateQuery: Query<any>, action: string, set: boolean) => {
+        const logForQuery = (updateQuery: Query<any, any, any>, action: string, set: boolean) => {
+            if (!updateQuery.getUpdate) {
+                return;
+            }
             const update = updateQuery.getUpdate();
 
-            if (updateQuery.__logged) return;
+            if (updateQuery.__logged) {
+                return;
+            }
 
             if (!updateQuery.__changeId || !updateQuery.__actor) {
                 console.warn(`Actor not set for query: ${JSON.stringify(update)}`);
             } else if (set) {
-                update.$set.__changeId = updateQuery.__changeId;
-                update.$set.__actor = updateQuery.__actor;
+                // Accommodate type changes. https://github.com/Automattic/mongoose/commit/61d24d41e00454fccda9bf1e69730d2bdbe700c9#diff-7aa4473ede4abd9ec099e87fec67fd57afafaf39e05d493ab4533acc38547eb8
+                if (!update) {
+                    console.warn(`Update is null. Query: ${JSON.stringify(updateQuery)}`);
+                    return;
+                }
+                if ('$set' in (update as UpdateQuery<any>)) {
+                    (update as UpdateQuery<any>).$set!.__changeId = updateQuery.__changeId;
+                    (update as UpdateQuery<any>).$set!.__actor = updateQuery.__actor;
+                }
                 (<any> updateQuery)._update = update;
             }
             updateQuery.__logged = true;
@@ -109,39 +121,39 @@ const mongooseChangeLogger = (params: IParams) => {
             );
         };
 
-        schema.pre('findOneAndUpdate', function (this: Query<any>) {
+        schema.pre('findOneAndUpdate', function (this: Query<any, any, any>) {
             logForQuery(this, 'findOneAndUpdate', true);
         });
 
-        schema.pre('deleteMany', function (this: Query<any>) {
+        schema.pre('deleteMany', function (this: Query<any, any, any>) {
             logForQuery(this, 'deleteMany', false);
         });
 
-        schema.pre('deleteOne', function (this: Query<any>) {
+        schema.pre('deleteOne', function (this: Query<any, any, any>) {
             logForQuery(this, 'deleteOne', false);
         });
 
-        schema.pre('findOneAndDelete', function (this: Query<any>) {
+        schema.pre('findOneAndDelete', function (this: Query<any, any, any>) {
             logForQuery(this, 'findOneAndDelete', false);
         });
 
-        schema.pre('findOneAndRemove', function (this: Query<any>) {
+        schema.pre('findOneAndRemove', function (this: Query<any, any, any>) {
             logForQuery(this, 'findOneAndRemove', false);
         });
 
-        schema.pre('remove', function (this: Query<any>) {
+        schema.pre('remove', function (this: Query<any, any, any>) {
             logForQuery(this, 'remove', false);
         });
 
-        schema.pre('update', function (this: Query<any>) {
+        schema.pre('update', function (this: Query<any, any, any>) {
             logForQuery(this, 'update', true);
         });
 
-        schema.pre('updateOne', function (this: Query<any>) {
+        schema.pre('updateOne', function (this: Query<any, any, any>) {
             logForQuery(this, 'updateOne', true);
         });
 
-        schema.pre('updateMany', function (this: Query<any>) {
+        schema.pre('updateMany', function (this: Query<any, any, any>) {
             logForQuery(this, 'updateMany', true);
         });
 
@@ -155,7 +167,9 @@ const mongooseChangeLogger = (params: IParams) => {
 
         const logForDoc = (doc: any, action: string) => {
             // prevent logging twice
-            if (doc.__logged) return;
+            if (doc.__logged) {
+                return;
+            }
             if (!doc.__changeId || !doc.__actor) {
                 console.warn(`Actor not set for ${action}: ${JSON.stringify(doc)}`);
             }
