@@ -16,4 +16,4 @@ export interface IParams {
     concurrentSaves?: number; // default to 10
 }
 
-export * from './types/mongoose';
+export * from './mongoose';
